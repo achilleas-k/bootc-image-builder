@@ -17,6 +17,7 @@ import (
 	"github.com/osbuild/images/pkg/rpmmd"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 //go:embed fedora-eln.json
@@ -153,31 +154,19 @@ func saveManifest(ms manifest.OSBuildManifest, fpath string) error {
 	return nil
 }
 
-func build(cmd *cobra.Command, args []string) {
+func build(flags *pflag.FlagSet, imgref string, upload bool) error {
 	hostArch := arch.Current()
 	repos := loadRepos(hostArch.String())
 
-	imgref := args[0]
-	outputDir, _ := cmd.Flags().GetString("output")
-	osbuildStore, _ := cmd.Flags().GetString("store")
-	rpmCacheRoot, _ := cmd.Flags().GetString("rpmmd")
-	configFile, _ := cmd.Flags().GetString("config")
-	imgType, _ := cmd.Flags().GetString("type")
-	tlsVerify, _ := cmd.Flags().GetBool("tls-verify")
+	outputDir, _ := flags.GetString("output")
+	osbuildStore, _ := flags.GetString("store")
+	rpmCacheRoot, _ := flags.GetString("rpmmd")
+	configFile, _ := flags.GetString("config")
+	imgType, _ := flags.GetString("type")
+	tlsVerify, _ := flags.GetBool("tls-verify")
 
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		fail(fmt.Sprintf("failed to create target directory: %s", err.Error()))
-	}
-
-	upload := false
-	if region, _ := cmd.Flags().GetString("aws-region"); region != "" {
-		if imgType != "ami" {
-			fail("aws flags set for non-ami image type")
-		}
-		// initialise the client to check if the env vars exist before building the image
-		_, err := uploader.NewAWSClient(region)
-		check(err)
-		upload = true
 	}
 
 	canChown, err := canChownInPath(outputDir)
@@ -230,13 +219,23 @@ func build(cmd *cobra.Command, args []string) {
 		switch imgType {
 		case "ami":
 			diskpath := filepath.Join(outputDir, exports[0], "disk.raw")
-			check(uploadAMI(diskpath, cmd.Flags()))
+			check(uploadAMI(diskpath, flags))
 		default:
 			panic(fmt.Sprintf("upload set but image type %s doesn't support uploading", imgType))
 		}
 	} else {
 		fmt.Printf("Results saved in\n%s\n", outputDir)
 	}
+
+	return nil
+}
+ 
+func validateUploadFlags( flags *pflag.FlagSet) error {
+	imgType, _ := flags.GetString("type")	
+			if region, _ := flags.GetString("aws-region"); region != "" {
+				if imgType != "ami" {
+					return
+				}
 
 }
 
@@ -246,7 +245,19 @@ func main() {
 		Long:                  "create a bootable image from an ostree native container",
 		Args:                  cobra.ExactArgs(1),
 		DisableFlagsInUseLine: true,
-		Run:                   build,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			flags := cmd.Flags()
+				if imgType != "ami" {
+					return fmt.Errorf("aws flags set for non-ami image type")
+				}
+				// initialise the client to check if the env vars exist before building the image
+				_, err := uploader.NewAWSClient(region)
+				check(err)
+				upload = true
+			}
+
+			return build(flags, args[0])
+		},
 	}
 
 	logrus.SetLevel(logrus.ErrorLevel)
