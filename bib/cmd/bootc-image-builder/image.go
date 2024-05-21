@@ -23,6 +23,7 @@ import (
 	"github.com/osbuild/images/pkg/rpmmd"
 	"github.com/osbuild/images/pkg/runner"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 // TODO: Auto-detect this from container image metadata
@@ -136,6 +137,15 @@ func manifestForDiskImage(c *ManifestConfig, rng *rand.Rand) (*manifest.Manifest
 			return nil, fmt.Errorf("root mountable is not an ordinary filesystem (btrfs is not yet supported)")
 		}
 		rootFS.Type = c.RootFSType
+
+		if slices.Contains([]string{"ext4", "xfs"}, c.RootFSType) {
+			// set the boot partition to the same filesystem type as the root partition
+			if bootMountable := basept.FindMountable("/boot"); bootMountable != nil {
+				if bootFS, isFS := bootMountable.(*disk.Filesystem); isFS {
+					bootFS.Type = c.RootFSType
+				}
+			}
+		}
 	}
 
 	pt, err := disk.NewPartitionTable(&basept, c.Filesystems, DEFAULT_SIZE, disk.RawPartitioningMode, nil, rng)
