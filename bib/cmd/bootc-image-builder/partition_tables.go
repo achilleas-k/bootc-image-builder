@@ -47,19 +47,6 @@ var partitionTables = distro.BasePartitionTableMap{
 				},
 			},
 			{
-				Size: 1 * GibiByte,
-				Type: disk.FilesystemDataGUID,
-				UUID: disk.FilesystemDataUUID,
-				Payload: &disk.Filesystem{
-					Type:         "ext4",
-					Mountpoint:   "/boot",
-					Label:        "boot",
-					FSTabOptions: BootOptions,
-					FSTabFreq:    1,
-					FSTabPassNo:  2,
-				},
-			},
-			{
 				Size: 2 * GibiByte,
 				Type: disk.FilesystemDataGUID,
 				UUID: disk.RootPartitionUUID,
@@ -89,18 +76,6 @@ var partitionTables = distro.BasePartitionTableMap{
 					Label:        "EFI-SYSTEM",
 					FSTabOptions: "umask=0077,shortname=winnt",
 					FSTabFreq:    0,
-					FSTabPassNo:  2,
-				},
-			},
-			{
-				Size: 1 * GibiByte,
-				Type: "83",
-				Payload: &disk.Filesystem{
-					Type:         "ext4",
-					Mountpoint:   "/boot",
-					Label:        "boot",
-					FSTabOptions: BootOptions,
-					FSTabFreq:    1,
 					FSTabPassNo:  2,
 				},
 			},
