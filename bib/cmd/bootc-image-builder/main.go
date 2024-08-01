@@ -470,7 +470,7 @@ func cmdBuild(cmd *cobra.Command, args []string) error {
 		osbuildEnv = append(osbuildEnv, envVars...)
 	}
 
-	_, err = osbuild.RunOSBuild(mf, osbuildStore, outputDir, exports, nil, osbuildEnv, false, os.Stderr)
+	_, err = osbuild.RunOSBuild(mf, osbuildStore, outputDir, exports, []string{"*"}, osbuildEnv, false, os.Stderr)
 	if err != nil {
 		return fmt.Errorf("cannot run osbuild: %w", err)
 	}
