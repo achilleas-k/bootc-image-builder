@@ -267,6 +267,8 @@ func manifestForISO(c *ManifestConfig, rng *rand.Rand) (*manifest.Manifest, erro
 		img.DisabledAnacondaModules = append(img.DisabledAnacondaModules, instCust.Modules.Disable...)
 	}
 	img.AdditionalAnacondaModules = append(img.AdditionalAnacondaModules,
+		anaconda.ModuleLocalization,
+		anaconda.ModuleTimezone,
 		anaconda.ModuleUsers,
 		anaconda.ModuleServices,
 		anaconda.ModuleSecurity,
