@@ -13,9 +13,11 @@ from contextlib import contextmanager
 from typing import NamedTuple
 
 import pytest
+
 # local test utils
 import testutil
-from containerbuild import build_container_fixture    # pylint: disable=unused-import
+from containerbuild import \
+    build_container_fixture  # pylint: disable=unused-import
 from testcases import CLOUD_BOOT_IMAGE_TYPES, DISK_IMAGE_TYPES, gen_testcases
 from vm import AWS, QEMU
 
@@ -201,17 +203,40 @@ def build_images(shared_tmpdir, build_container, request, force_aws_upload):
                     "groups": ["wheel"],
                 },
             ],
-            "filesystem": [
-                {
-                    "mountpoint": "/",
-                    "minsize": "12GiB"
-                },
-            ],
             "kernel": {
                 "append": kargs,
             },
         },
     }
+
+    if tc.rootfs != "btrfs":
+        # add some custom mountpoints
+        cfg["customizations"]["filesystem"] = [
+                {
+                    "mountpoint": "/",
+                    "minsize": "12GiB"
+                },
+                {
+                    "mountpoint": "/var/data",
+                    "minsize": "3 GiB"
+                },
+                {
+                    "mountpoint": "/var/data/test",
+                    "minsize": "1 GiB"
+                },
+                {
+                    "mountpoint": "/var/opt",
+                    "minsize": "2 GiB"
+                },
+        ]
+    else:
+        # only minimal customizations are supported for btrfs currently
+        cfg["customizations"]["filesystem"] = [
+                {
+                    "mountpoint": "/",
+                    "minsize": "12GiB"
+                },
+        ]
 
     config_json_path = output_path / "config.json"
     config_json_path.write_text(json.dumps(cfg), encoding="utf-8")
@@ -359,7 +384,11 @@ def test_image_boots(image_type):
         # XXX: read the fully yaml instead?
         assert f"image: {image_type.container_ref}" in output
 
-        # Figure out how big / is and make sure it is > 11bGiB
+        DF IS NOT RUN
+
+        ADD CHECKS FOR CUSTOM FILESYSTEMS
+
+        # Figure out how big / is and make sure it is > 11 GiB
         # Note that df output is in 1k blocks, not bytes
         for line in output.splitlines():
             fields = line.split()
