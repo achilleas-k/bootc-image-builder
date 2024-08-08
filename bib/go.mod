@@ -2,6 +2,8 @@ module github.com/osbuild/bootc-image-builder/bib
 
 go 1.21.0
 
+toolchain go1.22.6
+
 require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/aws/aws-sdk-go v1.55.5
@@ -125,3 +127,5 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
+
+replace github.com/osbuild/images => github.com/achilleas-k/images v0.0.0-20240808151501-a00adabfd73b
