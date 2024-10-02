@@ -205,6 +205,21 @@ func setFSTypes(pt *disk.PartitionTable, rootfs string) error {
 }
 
 func genPartitionTable(c *ManifestConfig, customizations *blueprint.Customizations, rng *rand.Rand) (*disk.PartitionTable, error) {
+	if partitioning := customizations.GetPartitioning(); partitioning != nil {
+		// override base partition table and ignore filesystem customizations
+
+		// use the rootfs type as the default fs type for the custom partition table
+		defaultFsType, err := disk.FSTypeFromString(c.RootFSType)
+		if err != nil {
+			return nil, err
+		}
+		options := &disk.CustomPartitionTableOptions{
+			PartitionTableType: "gpt",
+			BootMode:           platform.BOOT_HYBRID,
+			DefaultFSType:      defaultFsType,
+		}
+		return disk.NewCustomPartitionTable(partitioning, options, rng)
+	}
 	basept, ok := partitionTables[c.Architecture.String()]
 	if !ok {
 		return nil, fmt.Errorf("pipelines: no partition tables defined for %s", c.Architecture)
