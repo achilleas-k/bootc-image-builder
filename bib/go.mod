@@ -126,4 +126,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
 
-replace github.com/osbuild/images => github.com/achilleas-k/images v0.0.0-20240920132015-6b1f0378a333
+replace github.com/osbuild/images => github.com/achilleas-k/images v0.0.0-20241006183346-13e889f2d87d
