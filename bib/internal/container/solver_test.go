@@ -131,3 +131,36 @@ func TestDNFJsonWorkWithSubscribedContent(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, len(res.Packages) > 0)
 }
+
+func TestDNFJsonOutsideContainerWithSubscribedContent(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("skipping test; not running as root")
+	}
+	if runtime.GOARCH != "amd64" {
+		t.Skip("skipping test; only runs on x86_64")
+	}
+	if _, err := os.Stat("/usr/libexec/osbuild-depsolve-dnf"); err != nil {
+		t.Skip("cannot find /usr/libexec/osbuild-depsolve-dnf")
+	}
+	cacheRoot := t.TempDir()
+
+	restore := subscribeMachine(t)
+	defer restore()
+
+	cnt, err := container.New(dnfTestingImageRHEL)
+	require.NoError(t, err)
+	err = cnt.InitDNF()
+	require.NoError(t, err)
+
+	sourceInfo, err := source.LoadInfo(cnt.Root())
+	require.NoError(t, err)
+	solver, err := cnt.NewExternalSolver(cacheRoot, arch.ARCH_X86_64, sourceInfo)
+	require.NoError(t, err)
+	res, err := solver.Depsolve([]rpmmd.PackageSet{
+		{
+			Include: []string{"coreutils"},
+		},
+	}, 0)
+	require.NoError(t, err)
+	assert.True(t, len(res.Packages) > 0)
+}

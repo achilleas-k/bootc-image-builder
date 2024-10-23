@@ -66,3 +66,15 @@ func (cnt *Container) NewContainerSolver(cacheRoot string, architecture arch.Arc
 	solver.SetRootDir("/")
 	return solver, nil
 }
+
+func (cnt *Container) NewExternalSolver(cacheRoot string, architecture arch.Arch, sourceInfo *source.Info) (*dnfjson.Solver, error) {
+	// just assume we have osbuild-depsolve-dnf installed as a dependency
+	solver := dnfjson.NewSolver(
+		sourceInfo.OSRelease.PlatformID,
+		sourceInfo.OSRelease.VersionID,
+		architecture.String(),
+		fmt.Sprintf("%s-%s", sourceInfo.OSRelease.ID, sourceInfo.OSRelease.VersionID),
+		cacheRoot)
+	solver.SetRootDir(cnt.Root())
+	return solver, nil
+}
