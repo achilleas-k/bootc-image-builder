@@ -2,13 +2,16 @@ package container
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/osbuild/images/pkg/arch"
 	"github.com/osbuild/images/pkg/dnfjson"
 
 	"github.com/osbuild/bootc-image-builder/bib/internal/source"
+	"github.com/osbuild/bootc-image-builder/bib/internal/util"
 )
 
 // InitDNF initializes dnf in the container. This is necessary when
@@ -67,14 +70,25 @@ func (cnt *Container) NewContainerSolver(cacheRoot string, architecture arch.Arc
 	return solver, nil
 }
 
-func (cnt *Container) NewExternalSolver(cacheRoot string, architecture arch.Arch, sourceInfo *source.Info) (*dnfjson.Solver, error) {
-	// just assume we have osbuild-depsolve-dnf installed as a dependency
-	solver := dnfjson.NewSolver(
+func (cnt *Container) NewExternalSolver(cacheRoot string, architecture arch.Arch, sourceInfo *source.Info) (solver *dnfjson.Solver, unmounter func(), err error) {
+	if _, err := os.Stat(secretDir); err == nil {
+		containerSecretsPath := filepath.Join(cnt.Root(), strings.TrimPrefix(secretDir, "/"))
+		if err := util.RunCmdSync("mount", "-o", "bind,ro", secretDir, containerSecretsPath); err != nil {
+			return nil, nil, err
+		}
+		unmounter = func() {
+			if err := util.RunCmdSync("umount", containerSecretsPath); err != nil {
+				fmt.Fprintf(os.Stderr, "error unmounting secrets directory %q from container mount: %s", containerSecretsPath, err)
+			}
+		}
+	}
+
+	solver = dnfjson.NewSolver(
 		sourceInfo.OSRelease.PlatformID,
 		sourceInfo.OSRelease.VersionID,
 		architecture.String(),
 		fmt.Sprintf("%s-%s", sourceInfo.OSRelease.ID, sourceInfo.OSRelease.VersionID),
 		cacheRoot)
 	solver.SetRootDir(cnt.Root())
-	return solver, nil
+	return solver, unmounter, nil
 }

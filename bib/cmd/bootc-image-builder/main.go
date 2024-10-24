@@ -289,7 +289,7 @@ func manifestFromCobra(cmd *cobra.Command, args []string) ([]byte, *mTLSConfig, 
 	if err := container.InitDNF(); err != nil {
 		return nil, nil, err
 	}
-	solver, err := container.NewExternalSolver(rpmCacheRoot, cntArch, sourceinfo)
+	solver, err := container.NewContainerSolver(rpmCacheRoot, cntArch, sourceinfo)
 	if err != nil {
 		return nil, nil, err
 	}

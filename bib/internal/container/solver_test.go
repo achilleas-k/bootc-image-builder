@@ -154,8 +154,9 @@ func TestDNFJsonOutsideContainerWithSubscribedContent(t *testing.T) {
 
 	sourceInfo, err := source.LoadInfo(cnt.Root())
 	require.NoError(t, err)
-	solver, err := cnt.NewExternalSolver(cacheRoot, arch.ARCH_X86_64, sourceInfo)
+	solver, umount, err := cnt.NewExternalSolver(cacheRoot, arch.ARCH_X86_64, sourceInfo)
 	require.NoError(t, err)
+	defer umount()
 	res, err := solver.Depsolve([]rpmmd.PackageSet{
 		{
 			Include: []string{"coreutils"},

@@ -20,13 +20,14 @@ type Container struct {
 	root string
 }
 
+const secretDir = "/run/secrets"
+
 // New creates a new running container from the given image reference.
 //
 // NB:
 // - --net host is used to make networking work in a nested container
 // - /run/secrets is mounted from the host to make sure RHSM credentials are available
 func New(ref string) (*Container, error) {
-	const secretDir = "/run/secrets"
 	secretVolume := fmt.Sprintf("%s:%s", secretDir, secretDir)
 
 	args := []string{
